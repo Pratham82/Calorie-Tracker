@@ -17,4 +17,4 @@ This is calorie tracker application that I have created which uses all the conce
 - Use of IFFIES 
 - Built on Module patterns
 
-<!-- Check out the live site [here](https://book-store-2020.netlify.app/)  -->
+Check out the live site [here](https://calorie-app.netlify.app/) 
