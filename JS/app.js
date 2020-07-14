@@ -231,7 +231,7 @@ const UIController = (() => {
 			data.map((item) => {
 				op += `
                 <li class='collection-item' style='font-size:18px' id='item-${item.id}' >
-                    <strong>${item.name}</strong> <em>${item.calories} Calories</em>
+                    <strong>${item.name}</strong> <em>${item.calories} Calories </em> 
                     <a href="" class="secondary-content">
 						<i class="edit-item fa fa-pencil"></i>
 					</a>
