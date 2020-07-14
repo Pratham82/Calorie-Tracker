@@ -1,3 +1,74 @@
+//************************* StorageController *****************************/
+// Storage controller
+const StorageController = (function () {
+	//* Public methods
+	return {
+		storeItem: function (item) {
+			let items;
+
+			// Check for the existing data
+			if (localStorage.getItem("items") === null) {
+				items = [];
+
+				//Push new item to the array which
+				items.push(item);
+
+				// Add this local variable to local storage
+				localStorage.setItem("items", JSON.stringify(items));
+			} else {
+				//If we have existing data then we will retrieve the data from local storage
+				items = JSON.parse(localStorage.getItem("items"));
+
+				//Push new item that we got from the local storage to our local variable
+				items.push(item);
+
+				// Finally add the updated array in local storage
+				localStorage.setItem("items", JSON.stringify(items));
+			}
+		},
+
+		// Get items from local storage and returning them as an array
+		getItemsFromStorage: function () {
+			let items;
+			if (localStorage.getItem("items") === null) {
+				items = [];
+			} else {
+				items = JSON.parse(localStorage.getItem("items"));
+			}
+			return items;
+		},
+		updateItemStorage: function (updatedItem) {
+			let items = JSON.parse(localStorage.getItem("items"));
+
+			// Iterate over the local storage and update the item
+			items.map((item, index) => {
+				if (updatedItem.id === item.id) {
+					items.splice(index, 1, updatedItem);
+				}
+			});
+
+			// Reset the local storage after updating the item
+			localStorage.setItem("items", JSON.stringify(items));
+		},
+		deleteItemFromStorage: function (id) {
+			let items = JSON.parse(localStorage.getItem("items"));
+
+			// Iterate over the local storage and delete the item
+			items.map((item, index) => {
+				if (id === item.id) {
+					items.splice(index, 1);
+				}
+			});
+
+			// Reset the local storage after deleting the item
+			localStorage.setItem("items", JSON.stringify(items));
+		},
+		clearItemFromStorage: function () {
+			localStorage.removeItem("items");
+		},
+	};
+})();
+
 //************************* ItemController ******************************/
 // Item controller
 const ItemController = (() => {
@@ -11,12 +82,15 @@ const ItemController = (() => {
 	//* Data structure/ state
 	// This data will be private we cannot access it directly, for using the data we have to return it
 	const data = {
-		// Here all the meals info will be stored
-		items: [
-			// { id: 0, name: "Chicken Biriyani", calories: 1300 },
-			// { id: 1, name: "Triple bypass burger", calories: 1500 },
-			// { id: 2, name: "Oreo smoothie", calories: 500 },
-		],
+		// Here all the meals info will be stored this is hard coded data
+		// items: [
+		// 	{ id: 0, name: "Chicken Biriyani", calories: 1300 },
+		// 	{ id: 1, name: "Triple bypass burger", calories: 1500 },
+		// 	{ id: 2, name: "Oreo smoothie", calories: 500 },
+		// ],
+
+		//* Data from local storage
+		items: StorageController.getItemsFromStorage(),
 
 		//Current item refers to the item when we are editing it
 		currentItem: null,
@@ -84,7 +158,9 @@ const ItemController = (() => {
 		},
 		deleteItem: function (id) {
 			// Get ID's from data structure
-			let ids = data.items.map((item) => item.id);
+			const ids = data.items.map(function (item) {
+				return item.id;
+			});
 
 			//Get index of the id that we want to delete
 			const index = ids.indexOf(id);
@@ -155,13 +231,16 @@ const UIController = (() => {
 			data.map((item) => {
 				op += `
                 <li class='collection-item' style='font-size:18px' id='item-${item.id}' >
-                    <strong>${item.name}</strong> <em>${item.calories}</em>
+                    <strong>${item.name}</strong> <em>${item.calories} Calories</em>
                     <a href="" class="secondary-content">
 						<i class="edit-item fa fa-pencil"></i>
 					</a>
                 </li>
                 `;
 			});
+
+			// Insert list items to the UI
+			document.querySelector(UISelectors.itemList).innerHTML = op;
 		},
 
 		//* This method will get the input value from the inputs in HTML
@@ -229,14 +308,14 @@ const UIController = (() => {
 			const itemID = `#item-${id}`;
 			const item = document.querySelector(itemID);
 			item.remove();
-			// Get total calories
-			const totalCalories = ItemController.getTotalCalories();
+			// // Get total calories
+			// const totalCalories = ItemController.getTotalCalories();
 
-			// Add total calories in the UI
-			UIController.showTotalCalories(totalCalories);
+			// // Add total calories in the UI
+			// UIController.showTotalCalories(totalCalories);
 
-			//* Remove the item from the input once it has added to the DOM
-			UIController.clearInputs();
+			// //* Remove the item from the input once it has added to the DOM
+			// UIController.clearInputs();
 		},
 
 		clearInputs: function () {
@@ -302,8 +381,10 @@ const UIController = (() => {
 	};
 })();
 
+//***************************** AppController ************************//
+
 // App controller
-const App = ((ItemController, UIController) => {
+const App = ((ItemController, StorageController, UIController) => {
 	//* Function for loading all the initial events in the application
 
 	//************************* LoadEventListeners  ********************/
@@ -377,6 +458,9 @@ const App = ((ItemController, UIController) => {
 			// Add total calories in the UI
 			UIController.showTotalCalories(totalCalories);
 
+			//* Store in local storage
+			StorageController.storeItem(newItem);
+
 			//* Remove the item from the input once it has added to the DOM
 			UIController.clearInputs();
 		}
@@ -432,6 +516,9 @@ const App = ((ItemController, UIController) => {
 		// Add total calories in the UI
 		UIController.showTotalCalories(totalCalories);
 
+		// Update local storage items to latest items
+		StorageController.updateItemStorage(updatedItem);
+
 		UIController.clearEditState();
 
 		//console.log("Update button clicked");
@@ -449,6 +536,17 @@ const App = ((ItemController, UIController) => {
 		// Delete from the UI
 		UIController.deleteListItem(currentItemID.id);
 
+		// Get total calories
+		const totalCalories = ItemController.getTotalCalories();
+
+		// Add total calories in the UI
+		UIController.showTotalCalories(totalCalories);
+
+		// Update local storage items to latest items
+		StorageController.deleteItemFromStorage(currentItemID.id);
+
+		UIController.clearEditState();
+
 		e.preventDefault();
 	};
 
@@ -465,6 +563,9 @@ const App = ((ItemController, UIController) => {
 
 		//Remove every thing from UI
 		UIController.removeItems();
+
+		// Remove all from local storage
+		StorageController.clearItemFromStorage();
 
 		// Remove from UI
 		UIController.hideList();
@@ -500,11 +601,17 @@ const App = ((ItemController, UIController) => {
 				UIController.showData(items);
 			}
 
+			// Get total calories
+			const totalCalories = ItemController.getTotalCalories();
+
+			// Add total calories in the UI
+			UIController.showTotalCalories(totalCalories);
+
 			//* Load Event listeners
 			loadEventListeners();
 		},
 	};
-})(ItemController, UIController);
+})(ItemController, StorageController, UIController);
 
 console.log();
 
